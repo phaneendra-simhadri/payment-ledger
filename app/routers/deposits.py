@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.database import async_session_maker
+from app.database import async_session_maker, parse_uuid
 from app.middleware.auth import auth_required
 from app.models import Account, LedgerEntry, Transaction
 from app.schemas.transaction import DepositRequest
@@ -33,7 +33,7 @@ async def create_deposit(payload: DepositRequest, user=Depends(auth_required), i
         is_fresh, existing = await check_idempotency(idempotency_key, payload_data, session)
         if not is_fresh and existing is not None:
             return transaction_response(existing)
-        account = await session.get(Account, payload.account_id)
+        account = await session.get(Account, parse_uuid(payload.account_id))
         if account is None or account.owner_id != user.id:
             raise HTTPException(status_code=403, detail={'error': 'UNAUTHORIZED', 'message': 'You do not own this account'})
         if account.currency != payload.currency.upper():

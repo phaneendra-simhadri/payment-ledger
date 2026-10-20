@@ -11,6 +11,46 @@ The project is designed to demonstrate the difficult parts of payment infrastruc
 - Scheduled reconciliation of every ledger transaction.
 - A small React demo that makes the idempotency behavior visible.
 
+## Developer quick start
+
+Use this setup to get the backend and the frontend working locally in a predictable way.
+
+1. Create and activate the Python environment:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+2. Copy the sample environment file and adjust the values if needed:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+3. Start the API:
+
+```powershell
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+4. Start the frontend in another terminal:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+5. Open the app in the browser:
+
+- Frontend: http://localhost:5173
+- API docs: http://localhost:8000/docs
+- Health check: http://localhost:8000/health
+
+For the full local stack with Postgres, Redis, Celery, and background workers, use the Docker workflow described below or the detailed developer guide in [WORKING.md](WORKING.md).
+
 ## Contents
 
 - [Architecture](#architecture)

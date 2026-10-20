@@ -5,27 +5,31 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import parse_uuid
 from app.models import Account, LedgerEntry, Transaction
 
 
 async def get_account_for_update(db: AsyncSession, account_id: str) -> Account | None:
+    account_uuid = parse_uuid(account_id)
     result = await db.execute(
         select(Account)
-        .where(Account.id == account_id)
+        .where(Account.id == account_uuid)
         .with_for_update()
     )
     return result.scalar_one_or_none()
 
 
 async def lock_accounts_for_transfer(db: AsyncSession, from_account_id: str, to_account_id: str) -> tuple[Account | None, Account | None]:
+    from_uuid = parse_uuid(from_account_id)
+    to_uuid = parse_uuid(to_account_id)
     accounts = await db.execute(
         select(Account)
-        .where((Account.id == from_account_id) | (Account.id == to_account_id))
+        .where((Account.id == from_uuid) | (Account.id == to_uuid))
         .with_for_update()
     )
     rows = accounts.scalars().all()
     by_id = {str(account.id): account for account in rows}
-    return by_id.get(from_account_id), by_id.get(to_account_id)
+    return by_id.get(str(from_uuid)), by_id.get(str(to_uuid))
 
 
 async def write_double_entry_ledger(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import JSON, ForeignKey, Numeric, String
@@ -24,6 +24,6 @@ class Transaction(Base):
     from_account_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey('accounts.id'), nullable=True)
     to_account_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey('accounts.id'), nullable=True)
     request_metadata: Mapped[dict | None] = mapped_column('metadata', JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now(timezone.utc))
 
     ledger_entries: Mapped[list['LedgerEntry']] = relationship(back_populates='transaction')

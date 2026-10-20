@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
-from app.database import async_session_maker
+from app.database import async_session_maker, parse_uuid
 from app.middleware.auth import auth_required
 from app.models import Account, Transaction
 from app.schemas.account import AccountCreate
@@ -69,11 +69,12 @@ async def create_account(payload: AccountCreate, user=Depends(auth_required)):
 @router.get('/{account_id}/balance')
 async def get_account_balance(account_id: str, user=Depends(auth_required)):
     async with async_session_maker() as session:
-        account = await session.get(Account, account_id)
+        account_uuid = parse_uuid(account_id)
+        account = await session.get(Account, account_uuid)
         if account is None or account.owner_id != user.id:
             raise HTTPException(status_code=403, detail={'error': 'UNAUTHORIZED', 'message': 'You do not own this account'})
 
-        balance = await get_balance(account_id, session)
+        balance = await get_balance(str(account_uuid), session)
         return {'account_id': account_id, 'balance': str(balance.quantize(Decimal('0.01'))), 'currency': account.currency}
 
 
@@ -85,13 +86,14 @@ async def list_transactions(
     user=Depends(auth_required),
 ):
     async with async_session_maker() as session:
-        account = await session.get(Account, account_id)
+        account_uuid = parse_uuid(account_id)
+        account = await session.get(Account, account_uuid)
         if account is None or account.owner_id != user.id:
             raise HTTPException(status_code=403, detail={'error': 'UNAUTHORIZED', 'message': 'You do not own this account'})
 
         stmt = (
             select(Transaction)
-            .where((Transaction.from_account_id == account_id) | (Transaction.to_account_id == account_id))
+            .where((Transaction.from_account_id == account_uuid) | (Transaction.to_account_id == account_uuid))
             .order_by(Transaction.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
@@ -111,7 +113,7 @@ async def list_transactions(
             })
 
         total_stmt = select(func.count()).select_from(Transaction).where(
-            (Transaction.from_account_id == account_id) | (Transaction.to_account_id == account_id)
+            (Transaction.from_account_id == account_uuid) | (Transaction.to_account_id == account_uuid)
         )
         total = await session.scalar(total_stmt)
         return {'account_id': account_id, 'transactions': rows, 'page': page, 'page_size': page_size, 'total': total or 0}

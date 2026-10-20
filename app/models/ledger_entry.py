@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import ForeignKey, Numeric, String
@@ -19,7 +19,7 @@ class LedgerEntry(Base):
     account_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('accounts.id', ondelete='RESTRICT'), nullable=False)
     entry_type: Mapped[str] = mapped_column(String(6), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now(timezone.utc))
 
     transaction: Mapped['Transaction'] = relationship(back_populates='ledger_entries')
     account: Mapped['Account'] = relationship(back_populates='ledger_entries')

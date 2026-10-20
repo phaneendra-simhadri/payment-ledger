@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import JSON, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -21,4 +21,4 @@ class WebhookDelivery(Base):
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_attempted_at: Mapped[datetime | None] = mapped_column(nullable=True)
     next_retry_at: Mapped[datetime | None] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(nullable=False, default=lambda: datetime.now(timezone.utc))
